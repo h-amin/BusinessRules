@@ -1,8 +1,7 @@
-import itertools
-
 import psycopg2
 
 
+# Establish database connectie.
 def get_sql_connection(psycopg2):
     connection = psycopg2.connect(user="postgres",
                                   password="38gAc57ip!",
@@ -12,6 +11,7 @@ def get_sql_connection(psycopg2):
     return connection
 
 
+# Open database connectie.
 def open_db_connection():
     global connection, cursor
     try:
@@ -21,6 +21,7 @@ def open_db_connection():
         print("Error while connection to PostgresQL", error)
 
 
+# Close database connectie.
 def close_db_connection():
     if connection:
         connection.commit()
@@ -28,6 +29,7 @@ def close_db_connection():
         connection.close()
 
 
+# Functie om tabellen aan te maken.
 def create_tables():
     cursor.execute('CREATE TABLE IF NOT EXISTS content_filtering ('
                    'product_id varchar PRIMARY KEY,'
@@ -35,6 +37,7 @@ def create_tables():
                    'gender varchar,'
                    'recommendations varchar)')
 
+    # Insert query met als doel om product_id, sub_sub_category en gender in hetzelfde table; content_filtering te verkrijgen.
     cursor.execute(
         'INSERT INTO content_filtering(product_id, gender, sub_sub_category) SELECT p.product_id, p.gender, pc.sub_sub_category FROM products p INNER JOIN product_categories pc ON pc.product_id = p.product_id WHERE sub_sub_category IS NOT NULL AND gender IS NOT NULL;')
 
@@ -42,10 +45,12 @@ def create_tables():
                    'product_id varchar PRIMARY KEY,'
                    'recommendations varchar)')
 
+    # Zelfde principe met alleen product_id.
     cursor.execute(
         'INSERT INTO content_filtering(product_id) SELECT product_id FROM products;')
 
 
+# Functie dat opzoek gaat naar 4 product_id's die overeenkomende sub_sub_category en gender hebben met elk record.
 def fill_recommendations_content():
     cursor.execute('SELECT product_id FROM content_filtering')
     id_data = cursor.fetchall()
@@ -102,6 +107,7 @@ def fill_recommendations_content():
                 continue
 
 
+# Functie dat opzoek gaat naar 4 product_id's die overeenkomende visitor_ids hebben.
 def fill_recommendations_collaborative():
     cursor.execute("SELECT product_id FROM collaborative_filtering")
     data = cursor.fetchall()
@@ -115,10 +121,8 @@ def fill_recommendations_collaborative():
 
     recs_lst = []
 
-    for count, product_id in enumerate(product_ids):
-        if name == 'order_recs':
-            query = "SELECT product_id, COUNT(product_id AS product_id_count FROM product in order pio2)"
 
+# Master function om connectie te maken met het database en daadwerkelijk de functies uitvoeren.
 def fill_tables():
     open_db_connection()
     # create_tables()
